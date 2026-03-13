@@ -1,0 +1,55 @@
+# Environment and secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Python (backend)
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+.eggs/
+*.egg-info/
+*.egg
+dist/
+build/
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# Node / Next.js (frontend)
+node_modules/
+.next/
+out/
+.vercel
+*.tsbuildinfo
+.next/cache/
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs and temp
+*.log
+logs/
+tmp/
+temp/
+.cache/
+
+# Optional: local Docker overrides (uncomment if you use docker-compose.override.yml for secrets)
+# docker-compose.override.yml

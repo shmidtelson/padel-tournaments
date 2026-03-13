@@ -1,0 +1,7 @@
+# Procrastinate worker for local dev (optional)
+FROM python:3.12-slim
+WORKDIR /app
+COPY pyproject.toml /app/
+RUN pip install -e .
+COPY app /app/app
+CMD ["procrastinate", "--app=app.queues:app", "worker"]
