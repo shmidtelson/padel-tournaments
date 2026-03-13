@@ -1,6 +1,11 @@
 import os
+import warnings
+
 import pytest
 from fastapi.testclient import TestClient
+
+# Suppress third-party deprecation (passlib uses crypt removed in Python 3.13)
+warnings.filterwarnings("ignore", category=DeprecationWarning, module="passlib")
 
 # Ensure we don't run production validation in tests
 os.environ.setdefault("DEBUG", "true")

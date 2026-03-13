@@ -1,6 +1,6 @@
 """Pydantic request/response schemas (API contract)."""
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 from app.domain.value_objects import TournamentFormat
 
 
@@ -67,6 +67,8 @@ class CreateTournamentRequest(BaseModel):
 
 
 class TournamentResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     organization_id: int
     name: str
@@ -75,9 +77,6 @@ class TournamentResponse(BaseModel):
     status: str
     points_per_round: int | None
     pairing_strategy: str | None = None
-
-    class Config:
-        from_attributes = True
 
 
 class AddPlayerRequest(BaseModel):

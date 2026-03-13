@@ -1,9 +1,10 @@
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
 from typing import List
 
 
 class Settings(BaseSettings):
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
     app_name: str = "Padel Tournaments API"
     debug: bool = False
 
@@ -45,10 +46,6 @@ class Settings(BaseSettings):
     cors_origins: str = ""
     # Allowed base URL for Stripe checkout success_url/cancel_url (e.g. https://app.example.com)
     allowed_frontend_base_url: str = ""
-
-    class Config:
-        env_file = ".env"
-        extra = "ignore"
 
     def cors_origins_list(self) -> List[str]:
         if not self.cors_origins.strip():
