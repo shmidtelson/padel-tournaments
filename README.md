@@ -142,9 +142,10 @@ Detailed audit: **docs/PRODUCTION_READINESS_AUDIT.md** (MVP readiness and checkl
 
 ## Scripts and tools
 
-- **Backend:** `uv run pytest` (tests), `uv run alembic upgrade head` (migrations), `uv run uvicorn app.main:app`.
+- **Backend:** `uv run pytest` or `PYTHONPATH=. pytest tests/` (tests), `uv run alembic upgrade head` (migrations), `uv run uvicorn app.main:app`.
 - **Frontend:** `npm run dev` / `build` / `start`, `npm run lint`, `npm run format`.
 - **Root:** `.gitignore` and `.dockerignore` (root + backend) for clean repos and smaller Docker context.
+- **CI:** GitHub Actions (`.github/workflows/ci.yml`) runs on push/PR to `main`/`master`: backend tests with Postgres service, migrations, and pytest.
 
 ---
 
