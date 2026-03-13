@@ -1,22 +1,24 @@
 """Application service: authentication and user registration."""
 
-from app.domain.entities import User
-from app.domain.repositories import IUserRepository
-from app.application.dto import RegisterUserCommand, LoginResult
+from app.application.dto import LoginResult
 from app.core.security import (
-    verify_password,
-    get_password_hash,
     create_access_token,
     create_refresh_token,
     decode_token,
+    get_password_hash,
+    verify_password,
 )
+from app.domain.entities import User
+from app.domain.repositories import IUserRepository
 
 
 class AuthApplicationService:
     def __init__(self, user_repository: IUserRepository):
         self._users = user_repository
 
-    async def register_email(self, email: str, password: str, first_name: str | None = None, last_name: str | None = None) -> User:
+    async def register_email(
+        self, email: str, password: str, first_name: str | None = None, last_name: str | None = None
+    ) -> User:
         existing = await self._users.get_by_email(email)
         if existing:
             raise ValueError("User with this email already exists")

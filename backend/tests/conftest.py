@@ -11,7 +11,7 @@ warnings.filterwarnings("ignore", category=DeprecationWarning, module="passlib")
 os.environ.setdefault("DEBUG", "true")
 os.environ.setdefault("SECRET_KEY", "test-secret-key-at-least-32-characters-long")
 
-from app.main import app
+from app.main import app  # noqa: E402
 
 
 @pytest.fixture

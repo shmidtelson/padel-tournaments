@@ -1,7 +1,7 @@
 """Application DTOs (commands, queries, results)."""
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Sequence
 
 from app.domain.value_objects import TournamentFormat
 

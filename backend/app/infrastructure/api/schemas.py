@@ -1,6 +1,7 @@
 """Pydantic request/response schemas (API contract)."""
 
 from pydantic import BaseModel, ConfigDict, EmailStr, Field
+
 from app.domain.value_objects import TournamentFormat
 
 
@@ -130,6 +131,7 @@ class LeaderboardEntryResponse(BaseModel):
 # ----- Admin (SuperAdmin) -----
 class SiteSettingsResponse(BaseModel):
     """Настройки сайта (key-value). Рекомендуемые ключи: maintenance_mode, registration_enabled, default_locale, max_tournaments_per_month_free, max_organizations_per_user, site_name, contact_email."""
+
     settings: dict[str, str]
 
 

@@ -3,23 +3,23 @@
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials, OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer, OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.application.auth_service import AuthApplicationService
+from app.application.organization_service import OrganizationApplicationService
+from app.application.tournament_service import TournamentApplicationService
 from app.core.database import get_db
 from app.core.security import decode_token
 from app.infrastructure.persistence.repositories import (
-    UserRepository,
-    OrganizationRepository,
+    MatchRepository,
     OrganizationMemberRepository,
-    TournamentRepository,
+    OrganizationRepository,
     PlayerRepository,
     RoundRepository,
-    MatchRepository,
+    TournamentRepository,
+    UserRepository,
 )
-from app.application.auth_service import AuthApplicationService
-from app.application.tournament_service import TournamentApplicationService
-from app.application.organization_service import OrganizationApplicationService
 
 security = HTTPBearer(auto_error=False)
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
@@ -52,6 +52,7 @@ async def require_superuser(
     session: Annotated[AsyncSession, Depends(get_db)],
 ) -> int:
     from app.infrastructure.persistence.repositories import UserRepository
+
     repo = UserRepository(session)
     user = await repo.get_by_id(user_id)
     if not user or not user.is_superuser:

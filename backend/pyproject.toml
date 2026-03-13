@@ -27,8 +27,46 @@ dev = [
     "pytest-asyncio>=0.23.0",
     "pytest-cov>=4.1.0",
     "psycopg2-binary>=2.9.0",
+    "black>=24.0.0",
+    "isort>=5.13.0",
+    "ruff>=0.4.0",
 ]
 
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.black]
+line-length = 100
+target-version = ["py311"]
+include = '\.pyi?$'
+exclude = '''
+/(\.git|\.venv|alembic/versions)
+'''
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_first_party = ["app"]
+skip = [".venv", "alembic/versions"]
+skip_gitignore = true
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+exclude = [".venv", "alembic/versions", "alembic/env.py"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "W",   # pycodestyle warnings
+    "F",   # Pyflakes
+    "I",   # isort
+    "B",   # flake8-bugbear
+    "C4",  # flake8-comprehensions
+    "UP",  # pyupgrade
+]
+ignore = ["E501"]  # line length handled by black
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]

@@ -27,7 +27,7 @@ class TournamentEventBroadcaster:
             while True:
                 try:
                     msg = await asyncio.wait_for(queue.get(), timeout=30.0)
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     yield ServerSentEvent(data=json.dumps({"type": "ping"}), event="ping")
                     continue
                 if msg is None:
@@ -43,7 +43,9 @@ class TournamentEventBroadcaster:
                     if not self._queues[tournament_id]:
                         del self._queues[tournament_id]
 
-    async def publish(self, tournament_id: int, event_type: str, data: dict[str, Any] | None = None) -> None:
+    async def publish(
+        self, tournament_id: int, event_type: str, data: dict[str, Any] | None = None
+    ) -> None:
         """Разослать событие всем подписчикам турнира."""
         payload = {"type": event_type, **(data or {})}
         event = ServerSentEvent(data=json.dumps(payload), event=event_type)

@@ -1,8 +1,12 @@
 """Application service: organization CRUD and membership. Подтверждение организации — только суперпользователь."""
 
 from app.domain.entities import Organization, OrganizationMember, User
-from app.domain.repositories import IOrganizationRepository, IOrganizationMemberRepository, IUserRepository
-from app.domain.value_objects import OrgMemberRole, OrganizationStatus
+from app.domain.repositories import (
+    IOrganizationMemberRepository,
+    IOrganizationRepository,
+    IUserRepository,
+)
+from app.domain.value_objects import OrganizationStatus, OrgMemberRole
 
 
 class OrganizationApplicationService:
@@ -20,11 +24,15 @@ class OrganizationApplicationService:
         if not user or not user.is_superuser:
             raise PermissionError("Only a superuser can confirm organizations")
 
-    async def create_organization(self, user_id: int, name: str, slug: str | None = None) -> Organization:
+    async def create_organization(
+        self, user_id: int, name: str, slug: str | None = None
+    ) -> Organization:
         slug = slug or name.lower().replace(" ", "-")[:100]
         org = Organization(id=0, name=name, slug=slug, status=OrganizationStatus.pending.value)
         org = await self._orgs.add(org)
-        member = OrganizationMember(id=0, user_id=user_id, organization_id=org.id, role=OrgMemberRole.owner)
+        member = OrganizationMember(
+            id=0, user_id=user_id, organization_id=org.id, role=OrgMemberRole.owner
+        )
         await self._members.add(member)
         return org
 
@@ -71,7 +79,9 @@ class OrganizationApplicationService:
         self._ensure_superuser(user)
         return await self._orgs.list_by_status(OrganizationStatus.pending.value)
 
-    async def add_member(self, inviter_user_id: int, org_id: int, new_user_id: int, role: OrgMemberRole) -> OrganizationMember:
+    async def add_member(
+        self, inviter_user_id: int, org_id: int, new_user_id: int, role: OrgMemberRole
+    ) -> OrganizationMember:
         """Добавить участника в организацию. Только Owner может добавлять; можно добавить только Admin (или второго Owner)."""
         if not await self._members.is_user_org_owner(inviter_user_id, org_id):
             raise PermissionError("Only the organization Owner can add members")

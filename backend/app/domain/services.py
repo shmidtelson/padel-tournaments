@@ -8,10 +8,12 @@ Pairing algorithms (all return list of (team1, team2) with team = (id1, id2); 4 
 """
 
 import random
-from typing import Sequence
+from collections.abc import Sequence
 
 
-def generate_random_pairs(player_ids: Sequence[int]) -> list[tuple[tuple[int, int], tuple[int, int]]]:
+def generate_random_pairs(
+    player_ids: Sequence[int],
+) -> list[tuple[tuple[int, int], tuple[int, int]]]:
     """
     Full random: shuffle and take consecutive groups of 4 as one match.
     player_ids must have len divisible by 4.
@@ -29,7 +31,9 @@ def generate_random_pairs(player_ids: Sequence[int]) -> list[tuple[tuple[int, in
     return result
 
 
-def generate_americano_pairs(player_ids: Sequence[int]) -> list[tuple[tuple[int, int], tuple[int, int]]]:
+def generate_americano_pairs(
+    player_ids: Sequence[int],
+) -> list[tuple[tuple[int, int], tuple[int, int]]]:
     """Alias for generate_random_pairs (Americano traditionally uses random pairs)."""
     return generate_random_pairs(player_ids)
 
@@ -46,7 +50,7 @@ def generate_by_ranking_pairs(
         raise ValueError("Player count must be divisible by 4")
     result = []
     for i in range(0, len(ids), 4):
-        team1 = (ids[i], ids[i + 2])      # 1st + 3rd
+        team1 = (ids[i], ids[i + 2])  # 1st + 3rd
         team2 = (ids[i + 1], ids[i + 3])  # 2nd + 4th
         result.append((team1, team2))
     return result
@@ -68,7 +72,7 @@ def _count_shared_matches(
 ) -> dict[tuple[int, int], int]:
     """For each pair (a,b), count how many past matches contained both a and b."""
     counts: dict[tuple[int, int], int] = {}
-    for (p1, p2, p3, p4) in past_match_quartets:
+    for p1, p2, p3, p4 in past_match_quartets:
         for a, b in [(p1, p2), (p1, p3), (p1, p4), (p2, p3), (p2, p4), (p3, p4)]:
             k = _pair_key(a, b)
             counts[k] = counts.get(k, 0) + 1
@@ -98,10 +102,12 @@ def generate_similar_points_avoid_rematch_pairs(
             ((a, c), (b, d)),
             ((a, d), (b, c)),
         ]
+
         def score_split(team1: tuple[int, int], team2: tuple[int, int]) -> int:
             k1 = _pair_key(team1[0], team1[1])
             k2 = _pair_key(team2[0], team2[1])
             return pair_counts.get(k1, 0) + pair_counts.get(k2, 0)
+
         best = min(splits, key=lambda s: score_split(s[0], s[1]))
         result.append(best)
     return result

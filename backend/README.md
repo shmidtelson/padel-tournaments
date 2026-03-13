@@ -78,6 +78,16 @@ Before going to production:
 - **Logging and monitoring** — requests are logged with `X-Request-ID`; configure Sentry (SENTRY_DSN) and log rotation if needed.
 - **DB backups** — set up Postgres backups (scheduled pg_dump or managed DB backups).
 
+## Lint and format
+
+Install dev deps: `uv sync --extra dev` or `pip install -e ".[dev]"`.
+
+- **Format:** `black app tests` and `isort app tests`
+- **Check only:** `black --check app tests`, `isort --check-only app tests`
+- **Lint:** `ruff check app tests` (add `--fix` to auto-fix)
+
+CI runs black --check, isort --check-only, and ruff check before tests.
+
 ## Run
 
 **Local development:** set **DEBUG=true** in `.env` (then SECRET_KEY and CORS_ORIGINS are not enforced). For production leave DEBUG=false and set all variables from the Production checklist.

@@ -1,6 +1,7 @@
 """Очереди Procrastinate (PostgreSQL). Для локальной разработки: docker compose up -d postgres && procrastinate --app=app.queues:app worker."""
 
 import os
+
 import procrastinate
 
 from app.core.config import settings

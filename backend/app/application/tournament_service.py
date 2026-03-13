@@ -1,29 +1,29 @@
 """Application service: tournament CRUD, players, rounds, matches, leaderboard."""
 
-from app.domain.entities import Tournament, Player, Round, Match
-from app.domain.repositories import (
-    ITournamentRepository,
-    IPlayerRepository,
-    IRoundRepository,
-    IMatchRepository,
-    IOrganizationMemberRepository,
-    IOrganizationRepository,
-)
-from app.domain.value_objects import TournamentFormat, PairingStrategy
-from app.domain.services import (
-    generate_random_pairs,
-    generate_by_ranking_pairs,
-    generate_similar_points_avoid_rematch_pairs,
-    compute_match_points,
-)
 from app.application.dto import (
-    CreateTournamentCommand,
     AddPlayerCommand,
-    UpdateMatchScoreCommand,
+    CreateTournamentCommand,
     LeaderboardEntry,
     MatchDto,
     RoundDto,
+    UpdateMatchScoreCommand,
 )
+from app.domain.entities import Match, Player, Round, Tournament
+from app.domain.repositories import (
+    IMatchRepository,
+    IOrganizationMemberRepository,
+    IOrganizationRepository,
+    IPlayerRepository,
+    IRoundRepository,
+    ITournamentRepository,
+)
+from app.domain.services import (
+    compute_match_points,
+    generate_by_ranking_pairs,
+    generate_random_pairs,
+    generate_similar_points_avoid_rematch_pairs,
+)
+from app.domain.value_objects import PairingStrategy, TournamentFormat
 
 
 class TournamentApplicationService:
@@ -53,7 +53,9 @@ class TournamentApplicationService:
         if self._orgs:
             org = await self._orgs.get_by_id(cmd.organization_id)
             if not org or not org.is_approved():
-                raise ValueError("Organization must be approved by a superuser before creating tournaments")
+                raise ValueError(
+                    "Organization must be approved by a superuser before creating tournaments"
+                )
         slug = cmd.name.lower().replace(" ", "-")[:100]
         tournament = Tournament(
             id=0,
@@ -140,7 +142,7 @@ class TournamentApplicationService:
         round_entity = Round(id=0, tournament_id=tournament_id, round_index=next_index)
         round_entity = await self._rounds.add(round_entity)
         match_dtos = []
-        for (t1, t2) in pairs:
+        for t1, t2 in pairs:
             match = Match(
                 id=0,
                 round_id=round_entity.id,
@@ -156,20 +158,22 @@ class TournamentApplicationService:
             p2 = next(p for p in players if p.id == t1[1])
             p3 = next(p for p in players if p.id == t2[0])
             p4 = next(p for p in players if p.id == t2[1])
-            match_dtos.append(MatchDto(
-                id=match.id,
-                round_index=next_index,
-                player1_id=match.player1_id,
-                player2_id=match.player2_id,
-                player3_id=match.player3_id,
-                player4_id=match.player4_id,
-                score_team1=None,
-                score_team2=None,
-                player1_name=p1.display_name(),
-                player2_name=p2.display_name(),
-                player3_name=p3.display_name(),
-                player4_name=p4.display_name(),
-            ))
+            match_dtos.append(
+                MatchDto(
+                    id=match.id,
+                    round_index=next_index,
+                    player1_id=match.player1_id,
+                    player2_id=match.player2_id,
+                    player3_id=match.player3_id,
+                    player4_id=match.player4_id,
+                    score_team1=None,
+                    score_team2=None,
+                    player1_name=p1.display_name(),
+                    player2_name=p2.display_name(),
+                    player3_name=p3.display_name(),
+                    player4_name=p4.display_name(),
+                )
+            )
         return RoundDto(round_index=next_index, matches=match_dtos)
 
     async def update_match_score(self, user_id: int, cmd: UpdateMatchScoreCommand) -> int:
@@ -190,7 +194,12 @@ class TournamentApplicationService:
                 old_p1, old_p2, old_p3, old_p4 = compute_match_points(
                     match.score_team1, match.score_team2, tournament.points_per_round
                 )
-                for pid, pts in [(match.player1_id, old_p1), (match.player2_id, old_p2), (match.player3_id, old_p3), (match.player4_id, old_p4)]:
+                for pid, pts in [
+                    (match.player1_id, old_p1),
+                    (match.player2_id, old_p2),
+                    (match.player3_id, old_p3),
+                    (match.player4_id, old_p4),
+                ]:
                     pl = await self._players.get_by_id(pid)
                     if pl:
                         pl.total_points -= pts
@@ -198,7 +207,12 @@ class TournamentApplicationService:
             p1_pts, p2_pts, p3_pts, p4_pts = compute_match_points(
                 cmd.score_team1, cmd.score_team2, tournament.points_per_round
             )
-            for pid, pts in [(match.player1_id, p1_pts), (match.player2_id, p2_pts), (match.player3_id, p3_pts), (match.player4_id, p4_pts)]:
+            for pid, pts in [
+                (match.player1_id, p1_pts),
+                (match.player2_id, p2_pts),
+                (match.player3_id, p3_pts),
+                (match.player4_id, p4_pts),
+            ]:
                 player = await self._players.get_by_id(pid)
                 if player:
                     player.total_points += pts
@@ -212,7 +226,13 @@ class TournamentApplicationService:
         players = await self._players.list_by_tournament(tournament_id)
         sorted_players = sorted(players, key=lambda p: -p.total_points)
         return [
-            LeaderboardEntry(rank=i + 1, player_id=p.id, first_name=p.first_name, last_name=p.last_name, total_points=p.total_points)
+            LeaderboardEntry(
+                rank=i + 1,
+                player_id=p.id,
+                first_name=p.first_name,
+                last_name=p.last_name,
+                total_points=p.total_points,
+            )
             for i, p in enumerate(sorted_players)
         ]
 
@@ -229,19 +249,21 @@ class TournamentApplicationService:
                 p2 = player_map.get(m.player2_id)
                 p3 = player_map.get(m.player3_id)
                 p4 = player_map.get(m.player4_id)
-                match_dtos.append(MatchDto(
-                    id=m.id,
-                    round_index=r.round_index,
-                    player1_id=m.player1_id,
-                    player2_id=m.player2_id,
-                    player3_id=m.player3_id,
-                    player4_id=m.player4_id,
-                    score_team1=m.score_team1,
-                    score_team2=m.score_team2,
-                    player1_name=p1.display_name() if p1 else "",
-                    player2_name=p2.display_name() if p2 else "",
-                    player3_name=p3.display_name() if p3 else "",
-                    player4_name=p4.display_name() if p4 else "",
-                ))
+                match_dtos.append(
+                    MatchDto(
+                        id=m.id,
+                        round_index=r.round_index,
+                        player1_id=m.player1_id,
+                        player2_id=m.player2_id,
+                        player3_id=m.player3_id,
+                        player4_id=m.player4_id,
+                        score_team1=m.score_team1,
+                        score_team2=m.score_team2,
+                        player1_name=p1.display_name() if p1 else "",
+                        player2_name=p2.display_name() if p2 else "",
+                        player3_name=p3.display_name() if p3 else "",
+                        player4_name=p4.display_name() if p4 else "",
+                    )
+                )
             result.append(RoundDto(round_index=r.round_index, matches=match_dtos))
         return result

@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import TYPE_CHECKING
 
-from .value_objects import TournamentFormat, TournamentStatus, OrgMemberRole, OrganizationStatus
+from .value_objects import OrgMemberRole, TournamentFormat
 
 if TYPE_CHECKING:
     pass
@@ -61,7 +61,9 @@ class Tournament:
     slug: str
     status: str  # TournamentStatus value
     points_per_round: int | None
-    pairing_strategy: str | None = None  # PairingStrategy value; None = use format default (random for americano, by_ranking for mexicano)
+    pairing_strategy: str | None = (
+        None  # PairingStrategy value; None = use format default (random for americano, by_ranking for mexicano)
+    )
     created_at: datetime | None = None
     updated_at: datetime | None = None
 

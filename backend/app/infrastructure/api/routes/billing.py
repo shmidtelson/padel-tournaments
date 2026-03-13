@@ -1,19 +1,19 @@
 """Stripe: создание Checkout Session для тарифа Pro, webhook для подписок."""
 
 import logging
-import stripe
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, Header
+import stripe
+from fastapi import APIRouter, Depends, Header, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
 from app.core.database import get_db
+from app.domain.value_objects import OrgMemberRole
 from app.infrastructure.api.dependencies import require_current_user_id
 from app.infrastructure.api.schemas import CreateCheckoutRequest
-from app.infrastructure.persistence.models import OrganizationModel, OrganizationMemberModel
-from app.domain.value_objects import OrgMemberRole
+from app.infrastructure.persistence.models import OrganizationMemberModel, OrganizationModel
 
 router = APIRouter(prefix="/billing", tags=["billing"])
 logger = logging.getLogger(__name__)
@@ -27,7 +27,11 @@ def _url_allowed(url: str, base: str) -> bool:
     if not base or not base.strip():
         return True
     base_stripped = base.strip().rstrip("/")
-    return url.startswith(base_stripped + "/") or url == base_stripped or url.startswith(base_stripped + "?")
+    return (
+        url.startswith(base_stripped + "/")
+        or url == base_stripped
+        or url.startswith(base_stripped + "?")
+    )
 
 
 @router.post("/create-checkout-session")
@@ -41,7 +45,9 @@ async def create_checkout_session(
         raise HTTPException(status_code=503, detail="Billing not configured")
     base_url = getattr(settings, "allowed_frontend_base_url", "") or ""
     if not _url_allowed(body.success_url, base_url) or not _url_allowed(body.cancel_url, base_url):
-        raise HTTPException(status_code=400, detail="success_url and cancel_url must belong to the allowed frontend")
+        raise HTTPException(
+            status_code=400, detail="success_url and cancel_url must belong to the allowed frontend"
+        )
     org_id = body.organization_id
     # Проверка: пользователь — Owner организации
     q = select(OrganizationMemberModel).where(
@@ -89,10 +95,12 @@ async def stripe_webhook(
         raise HTTPException(status_code=503, detail="Webhook not configured")
     payload = await request.body()
     try:
-        event = stripe.Webhook.construct_event(payload, stripe_signature or "", settings.stripe_webhook_secret)
+        event = stripe.Webhook.construct_event(
+            payload, stripe_signature or "", settings.stripe_webhook_secret
+        )
     except Exception:
         logger.warning("Stripe webhook signature verification failed")
-        raise HTTPException(status_code=400, detail="Invalid signature")
+        raise HTTPException(status_code=400, detail="Invalid signature") from None
     if event["type"] == "checkout.session.completed":
         sess = event["data"]["object"]
         org_id = sess.get("metadata", {}).get("organization_id") or sess.get("subscription")

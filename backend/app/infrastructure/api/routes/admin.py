@@ -1,31 +1,31 @@
 """Admin API (только SuperAdmin): настройки сайта и статистика."""
 
+from datetime import datetime
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import select, func
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_db
 from app.infrastructure.api.dependencies import require_superuser
-from datetime import datetime
 from app.infrastructure.api.schemas import (
+    AdminStatsResponse,
+    BlogPostCreateRequest,
+    BlogPostResponse,
+    BlogPostUpdateRequest,
     SiteSettingsResponse,
     SiteSettingsUpdateRequest,
-    AdminStatsResponse,
-    BlogPostResponse,
-    BlogPostCreateRequest,
-    BlogPostUpdateRequest,
 )
 from app.infrastructure.persistence.models import (
-    SiteSettingModel,
-    UserModel,
+    BlogPostModel,
+    MatchModel,
     OrganizationModel,
-    TournamentModel,
     PlayerModel,
     RoundModel,
-    MatchModel,
-    BlogPostModel,
+    SiteSettingModel,
+    TournamentModel,
+    UserModel,
 )
 
 router = APIRouter(prefix="/admin", tags=["admin"])
@@ -118,28 +118,46 @@ async def get_admin_stats(
     """Статистика по платформе: пользователи, организации, турниры, игроки, раунды, матчи (только SuperAdmin)."""
     users_total = (await session.execute(select(func.count()).select_from(UserModel))).scalar() or 0
     users_superusers = (
-        await session.execute(select(func.count()).select_from(UserModel).where(UserModel.is_superuser.is_(True)))
+        await session.execute(
+            select(func.count()).select_from(UserModel).where(UserModel.is_superuser.is_(True))
+        )
     ).scalar() or 0
-    organizations_total = (await session.execute(select(func.count()).select_from(OrganizationModel))).scalar() or 0
+    organizations_total = (
+        await session.execute(select(func.count()).select_from(OrganizationModel))
+    ).scalar() or 0
     organizations_pending = (
         await session.execute(
-            select(func.count()).select_from(OrganizationModel).where(OrganizationModel.status == "pending")
+            select(func.count())
+            .select_from(OrganizationModel)
+            .where(OrganizationModel.status == "pending")
         )
     ).scalar() or 0
     organizations_approved = (
         await session.execute(
-            select(func.count()).select_from(OrganizationModel).where(OrganizationModel.status == "approved")
+            select(func.count())
+            .select_from(OrganizationModel)
+            .where(OrganizationModel.status == "approved")
         )
     ).scalar() or 0
     organizations_rejected = (
         await session.execute(
-            select(func.count()).select_from(OrganizationModel).where(OrganizationModel.status == "rejected")
+            select(func.count())
+            .select_from(OrganizationModel)
+            .where(OrganizationModel.status == "rejected")
         )
     ).scalar() or 0
-    tournaments_total = (await session.execute(select(func.count()).select_from(TournamentModel))).scalar() or 0
-    players_total = (await session.execute(select(func.count()).select_from(PlayerModel))).scalar() or 0
-    rounds_total = (await session.execute(select(func.count()).select_from(RoundModel))).scalar() or 0
-    matches_total = (await session.execute(select(func.count()).select_from(MatchModel))).scalar() or 0
+    tournaments_total = (
+        await session.execute(select(func.count()).select_from(TournamentModel))
+    ).scalar() or 0
+    players_total = (
+        await session.execute(select(func.count()).select_from(PlayerModel))
+    ).scalar() or 0
+    rounds_total = (
+        await session.execute(select(func.count()).select_from(RoundModel))
+    ).scalar() or 0
+    matches_total = (
+        await session.execute(select(func.count()).select_from(MatchModel))
+    ).scalar() or 0
 
     return AdminStatsResponse(
         users_total=users_total,
@@ -191,7 +209,11 @@ async def admin_create_blog_post(
     session: Annotated[AsyncSession, Depends(get_db)],
 ):
     """Создать пост (черновик или с published_at)."""
-    r = (await session.execute(select(BlogPostModel).where(BlogPostModel.slug == body.slug))).scalars().first()
+    r = (
+        (await session.execute(select(BlogPostModel).where(BlogPostModel.slug == body.slug)))
+        .scalars()
+        .first()
+    )
     if r:
         raise HTTPException(status_code=400, detail="Slug already exists")
     published_at = None
@@ -221,7 +243,7 @@ async def admin_update_blog_post(
     session: Annotated[AsyncSession, Depends(get_db)],
 ):
     """Обновить пост."""
-    m = (await session.get(BlogPostModel, post_id))
+    m = await session.get(BlogPostModel, post_id)
     if not m:
         raise HTTPException(status_code=404, detail="Post not found")
     if body.slug is not None:

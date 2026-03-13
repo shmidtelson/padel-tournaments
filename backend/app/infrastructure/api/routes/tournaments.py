@@ -1,23 +1,24 @@
 """Tournament API routes. SSE: поток событий по турниру при обновлении матчей/раундов."""
 
-from fastapi import APIRouter, Depends, HTTPException
-from sse_starlette.sse import EventSourceResponse
 from typing import Annotated
 
+from fastapi import APIRouter, Depends, HTTPException
+from sse_starlette.sse import EventSourceResponse
+
+from app.application.dto import MatchDto
 from app.application.tournament_service import TournamentApplicationService
-from app.application.dto import MatchDto, RoundDto, LeaderboardEntry
 from app.infrastructure.api.dependencies import get_tournament_service, require_current_user_id
-from app.infrastructure.sse.broadcaster import broadcaster
 from app.infrastructure.api.schemas import (
-    CreateTournamentRequest,
-    TournamentResponse,
     AddPlayerRequest,
-    PlayerResponse,
-    UpdateMatchScoreRequest,
-    MatchResponse,
-    RoundResponse,
+    CreateTournamentRequest,
     LeaderboardEntryResponse,
+    MatchResponse,
+    PlayerResponse,
+    RoundResponse,
+    TournamentResponse,
+    UpdateMatchScoreRequest,
 )
+from app.infrastructure.sse.broadcaster import broadcaster
 
 router = APIRouter(prefix="/tournaments", tags=["tournaments"])
 
@@ -60,6 +61,7 @@ async def create_tournament(
 ):
     try:
         from app.application.dto import CreateTournamentCommand
+
         cmd = CreateTournamentCommand(
             organization_id=body.organization_id,
             name=body.name,
@@ -70,9 +72,9 @@ async def create_tournament(
         t = await svc.create_tournament(user_id, cmd)
         return _tournament_to_response(t)
     except PermissionError as e:
-        raise HTTPException(status_code=403, detail=str(e))
+        raise HTTPException(status_code=403, detail=str(e)) from e
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("", response_model=list[TournamentResponse])
@@ -102,7 +104,14 @@ async def list_players(
 ):
     players = await svc.list_players(tournament_id)
     return [
-        PlayerResponse(id=p.id, tournament_id=p.tournament_id, first_name=p.first_name, last_name=p.last_name, user_id=p.user_id, total_points=p.total_points)
+        PlayerResponse(
+            id=p.id,
+            tournament_id=p.tournament_id,
+            first_name=p.first_name,
+            last_name=p.last_name,
+            user_id=p.user_id,
+            total_points=p.total_points,
+        )
         for p in players
     ]
 
@@ -116,6 +125,7 @@ async def add_player(
 ):
     try:
         from app.application.dto import AddPlayerCommand
+
         cmd = AddPlayerCommand(
             tournament_id=tournament_id,
             first_name=body.first_name,
@@ -132,9 +142,9 @@ async def add_player(
             total_points=p.total_points,
         )
     except PermissionError as e:
-        raise HTTPException(status_code=403, detail=str(e))
+        raise HTTPException(status_code=403, detail=str(e)) from e
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.post("/{tournament_id}/rounds/next", response_model=RoundResponse)
@@ -148,11 +158,13 @@ async def generate_next_round(
         if not r:
             raise HTTPException(status_code=400, detail="No next round generated")
         await broadcaster.publish(tournament_id, "rounds_updated", {"round_index": r.round_index})
-        return RoundResponse(round_index=r.round_index, matches=[_match_to_response(m) for m in r.matches])
+        return RoundResponse(
+            round_index=r.round_index, matches=[_match_to_response(m) for m in r.matches]
+        )
     except PermissionError as e:
-        raise HTTPException(status_code=403, detail=str(e))
+        raise HTTPException(status_code=403, detail=str(e)) from e
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/{tournament_id}/rounds", response_model=list[RoundResponse])
@@ -161,7 +173,10 @@ async def list_rounds(
     svc: Annotated[TournamentApplicationService, Depends(get_tournament_service)],
 ):
     rounds = await svc.get_rounds_with_matches(tournament_id)
-    return [RoundResponse(round_index=r.round_index, matches=[_match_to_response(m) for m in r.matches]) for r in rounds]
+    return [
+        RoundResponse(round_index=r.round_index, matches=[_match_to_response(m) for m in r.matches])
+        for r in rounds
+    ]
 
 
 @router.get("/{tournament_id}/stream")
@@ -183,14 +198,17 @@ async def update_match_score(
 ):
     try:
         from app.application.dto import UpdateMatchScoreCommand
-        cmd = UpdateMatchScoreCommand(match_id=match_id, score_team1=body.score_team1, score_team2=body.score_team2)
+
+        cmd = UpdateMatchScoreCommand(
+            match_id=match_id, score_team1=body.score_team1, score_team2=body.score_team2
+        )
         tournament_id = await svc.update_match_score(user_id, cmd)
         await broadcaster.publish(tournament_id, "match_updated", {"match_id": match_id})
         return {"ok": True}
     except PermissionError as e:
-        raise HTTPException(status_code=403, detail=str(e))
+        raise HTTPException(status_code=403, detail=str(e)) from e
     except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
+        raise HTTPException(status_code=400, detail=str(e)) from e
 
 
 @router.get("/{tournament_id}/leaderboard", response_model=list[LeaderboardEntryResponse])

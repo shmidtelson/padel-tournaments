@@ -32,7 +32,11 @@ async def list_posts(
     locale: str | None = None,
 ):
     """Список опубликованных постов (published_at не null), опционально по locale."""
-    q = select(BlogPostModel).where(BlogPostModel.published_at.isnot(None)).order_by(BlogPostModel.published_at.desc())
+    q = (
+        select(BlogPostModel)
+        .where(BlogPostModel.published_at.isnot(None))
+        .order_by(BlogPostModel.published_at.desc())
+    )
     if locale:
         q = q.where(BlogPostModel.locale == locale)
     result = await session.execute(q)
@@ -46,7 +50,9 @@ async def get_post(
     session: Annotated[AsyncSession, Depends(get_db)],
 ):
     """Один пост по slug (только опубликованный)."""
-    q = select(BlogPostModel).where(BlogPostModel.slug == slug, BlogPostModel.published_at.isnot(None))
+    q = select(BlogPostModel).where(
+        BlogPostModel.slug == slug, BlogPostModel.published_at.isnot(None)
+    )
     result = await session.execute(q)
     row = result.scalars().first()
     if not row:

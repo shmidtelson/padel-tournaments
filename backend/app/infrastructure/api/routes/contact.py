@@ -1,6 +1,7 @@
 """Contact form: submit message (logged; plug mailer or Sentry in production)."""
 
 import logging
+
 from fastapi import APIRouter
 from pydantic import BaseModel, EmailStr, Field
 

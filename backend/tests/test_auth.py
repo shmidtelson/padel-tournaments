@@ -1,6 +1,3 @@
-import pytest
-
-
 def test_register_validation_short_password(client):
     r = client.post(
         "/auth/register",

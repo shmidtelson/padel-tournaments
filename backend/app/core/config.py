@@ -1,6 +1,6 @@
-from pydantic_settings import BaseSettings, SettingsConfigDict
 from functools import lru_cache
-from typing import List
+
+from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
@@ -47,7 +47,7 @@ class Settings(BaseSettings):
     # Allowed base URL for Stripe checkout success_url/cancel_url (e.g. https://app.example.com)
     allowed_frontend_base_url: str = ""
 
-    def cors_origins_list(self) -> List[str]:
+    def cors_origins_list(self) -> list[str]:
         if not self.cors_origins.strip():
             return []
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]

@@ -3,25 +3,34 @@
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.domain.entities import User, Organization, OrganizationMember, Tournament, Player, Round, Match
-from app.domain.value_objects import TournamentFormat, OrgMemberRole, OrganizationStatus
+from app.domain.entities import (
+    Match,
+    Organization,
+    OrganizationMember,
+    Player,
+    Round,
+    Tournament,
+    User,
+)
 from app.domain.repositories import (
-    IUserRepository,
-    IOrganizationRepository,
+    IMatchRepository,
     IOrganizationMemberRepository,
-    ITournamentRepository,
+    IOrganizationRepository,
     IPlayerRepository,
     IRoundRepository,
-    IMatchRepository,
+    ITournamentRepository,
+    IUserRepository,
 )
+from app.domain.value_objects import OrganizationStatus, OrgMemberRole
+
 from .models import (
-    UserModel,
-    OrganizationModel,
+    MatchModel,
     OrganizationMemberModel,
-    TournamentModel,
+    OrganizationModel,
     PlayerModel,
     RoundModel,
-    MatchModel,
+    TournamentModel,
+    UserModel,
 )
 
 
@@ -53,7 +62,9 @@ def _org_to_entity(m: OrganizationModel) -> Organization:
 
 
 def _member_to_entity(m: OrganizationMemberModel) -> OrganizationMember:
-    return OrganizationMember(id=m.id, user_id=m.user_id, organization_id=m.organization_id, role=m.role, created_at=None)
+    return OrganizationMember(
+        id=m.id, user_id=m.user_id, organization_id=m.organization_id, role=m.role, created_at=None
+    )
 
 
 def _tournament_to_entity(m: TournamentModel) -> Tournament:
@@ -168,7 +179,9 @@ class OrganizationRepository(IOrganizationRepository):
         return [_org_to_entity(r) for r in rows]
 
     async def add(self, org: Organization) -> Organization:
-        m = OrganizationModel(name=org.name, slug=org.slug, status=org.status, plan=getattr(org, "plan", "free"))
+        m = OrganizationModel(
+            name=org.name, slug=org.slug, status=org.status, plan=getattr(org, "plan", "free")
+        )
         self._session.add(m)
         await self._session.flush()
         await self._session.refresh(m)
@@ -198,12 +211,16 @@ class OrganizationMemberRepository(IOrganizationMemberRepository):
         return _member_to_entity(r) if r else None
 
     async def get_org_members(self, organization_id: int) -> list[OrganizationMember]:
-        q = select(OrganizationMemberModel).where(OrganizationMemberModel.organization_id == organization_id)
+        q = select(OrganizationMemberModel).where(
+            OrganizationMemberModel.organization_id == organization_id
+        )
         rows = (await self._session.execute(q)).scalars().all()
         return [_member_to_entity(r) for r in rows]
 
     async def get_organization_ids_for_user(self, user_id: int) -> list[int]:
-        q = select(OrganizationMemberModel.organization_id).where(OrganizationMemberModel.user_id == user_id)
+        q = select(OrganizationMemberModel.organization_id).where(
+            OrganizationMemberModel.user_id == user_id
+        )
         rows = (await self._session.execute(q)).all()
         return [r[0] for r in rows]
 
@@ -216,7 +233,9 @@ class OrganizationMemberRepository(IOrganizationMemberRepository):
         return m is not None and m.role == OrgMemberRole.owner
 
     async def add(self, member: OrganizationMember) -> OrganizationMember:
-        m = OrganizationMemberModel(user_id=member.user_id, organization_id=member.organization_id, role=member.role)
+        m = OrganizationMemberModel(
+            user_id=member.user_id, organization_id=member.organization_id, role=member.role
+        )
         self._session.add(m)
         await self._session.flush()
         await self._session.refresh(m)
@@ -275,7 +294,11 @@ class PlayerRepository(IPlayerRepository):
         return _player_to_entity(r) if r else None
 
     async def list_by_tournament(self, tournament_id: int) -> list[Player]:
-        q = select(PlayerModel).where(PlayerModel.tournament_id == tournament_id).order_by(PlayerModel.id)
+        q = (
+            select(PlayerModel)
+            .where(PlayerModel.tournament_id == tournament_id)
+            .order_by(PlayerModel.id)
+        )
         rows = (await self._session.execute(q)).scalars().all()
         return [_player_to_entity(r) for r in rows]
 
@@ -314,12 +337,18 @@ class RoundRepository(IRoundRepository):
         return _round_to_entity(r) if r else None
 
     async def list_by_tournament(self, tournament_id: int) -> list[Round]:
-        q = select(RoundModel).where(RoundModel.tournament_id == tournament_id).order_by(RoundModel.round_index)
+        q = (
+            select(RoundModel)
+            .where(RoundModel.tournament_id == tournament_id)
+            .order_by(RoundModel.round_index)
+        )
         rows = (await self._session.execute(q)).scalars().all()
         return [_round_to_entity(r) for r in rows]
 
     async def add(self, round_entity: Round) -> Round:
-        m = RoundModel(tournament_id=round_entity.tournament_id, round_index=round_entity.round_index)
+        m = RoundModel(
+            tournament_id=round_entity.tournament_id, round_index=round_entity.round_index
+        )
         self._session.add(m)
         await self._session.flush()
         await self._session.refresh(m)

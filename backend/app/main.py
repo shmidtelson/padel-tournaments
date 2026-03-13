@@ -2,16 +2,25 @@
 
 import logging
 import uuid
+
 import sentry_sdk
-from sentry_sdk.integrations.fastapi import FastApiIntegration
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
+from fastapi.openapi.docs import get_redoc_html, get_swagger_ui_html
 from fastapi.responses import HTMLResponse
+from sentry_sdk.integrations.fastapi import FastApiIntegration
 from starlette.middleware.base import BaseHTTPMiddleware
 
-from app.infrastructure.api.routes import auth, tournaments, organizations, admin, blog, billing, contact
 from app.core.config import settings
+from app.infrastructure.api.routes import (
+    admin,
+    auth,
+    billing,
+    blog,
+    contact,
+    organizations,
+    tournaments,
+)
 
 logging.basicConfig(level=logging.INFO if not settings.debug else logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -94,10 +103,20 @@ class RequestIdAndLogMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         request_id = request.headers.get("X-Request-ID") or str(uuid.uuid4())
         request.state.request_id = request_id
-        logger.info("request_start path=%s method=%s request_id=%s", request.url.path, request.method, request_id)
+        logger.info(
+            "request_start path=%s method=%s request_id=%s",
+            request.url.path,
+            request.method,
+            request_id,
+        )
         response = await call_next(request)
         response.headers["X-Request-ID"] = request_id
-        logger.info("request_end path=%s status=%s request_id=%s", request.url.path, response.status_code, request_id)
+        logger.info(
+            "request_end path=%s status=%s request_id=%s",
+            request.url.path,
+            response.status_code,
+            request_id,
+        )
         return response
 
 
@@ -130,12 +149,14 @@ async def health():
 @app.get("/health/ready")
 async def health_ready():
     """Readiness: 200 if DB is reachable, else 503."""
-    from app.core.database import AsyncSessionLocal
     from sqlalchemy import text
+
+    from app.core.database import AsyncSessionLocal
+
     try:
         async with AsyncSessionLocal() as session:
             await session.execute(text("SELECT 1"))
         return {"status": "ok", "db": "up"}
     except Exception as e:
         logger.warning("health_ready failed: %s", e)
-        raise HTTPException(status_code=503, detail="Database unavailable")
+        raise HTTPException(status_code=503, detail="Database unavailable") from e

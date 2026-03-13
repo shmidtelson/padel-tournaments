@@ -1,9 +1,10 @@
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
+
 from jose import JWTError, jwt
 from passlib.context import CryptContext
-from .config import settings
 
+from .config import settings
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -17,7 +18,7 @@ def get_password_hash(password: str) -> str:
 
 
 def _utc_now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def create_access_token(subject: str | int, extra: dict[str, Any] | None = None) -> str:
