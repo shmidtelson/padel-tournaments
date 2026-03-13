@@ -63,6 +63,7 @@ class CreateTournamentRequest(BaseModel):
     name: str
     format: TournamentFormat
     points_per_round: int | None = None
+    pairing_strategy: str | None = None  # random | by_ranking | similar_points_avoid_rematch
 
 
 class TournamentResponse(BaseModel):
@@ -73,6 +74,7 @@ class TournamentResponse(BaseModel):
     slug: str
     status: str
     points_per_round: int | None
+    pairing_strategy: str | None = None
 
     class Config:
         from_attributes = True

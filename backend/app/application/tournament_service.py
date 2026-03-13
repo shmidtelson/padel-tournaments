@@ -9,8 +9,13 @@ from app.domain.repositories import (
     IOrganizationMemberRepository,
     IOrganizationRepository,
 )
-from app.domain.value_objects import TournamentFormat
-from app.domain.services import generate_americano_pairs, generate_mexicano_pairs, compute_match_points
+from app.domain.value_objects import TournamentFormat, PairingStrategy
+from app.domain.services import (
+    generate_random_pairs,
+    generate_by_ranking_pairs,
+    generate_similar_points_avoid_rematch_pairs,
+    compute_match_points,
+)
 from app.application.dto import (
     CreateTournamentCommand,
     AddPlayerCommand,
@@ -58,6 +63,7 @@ class TournamentApplicationService:
             slug=slug,
             status="draft",
             points_per_round=cmd.points_per_round,
+            pairing_strategy=cmd.pairing_strategy,
         )
         return await self._tournaments.add(tournament)
 
@@ -90,6 +96,14 @@ class TournamentApplicationService:
         )
         return await self._players.add(player)
 
+    def _resolve_pairing_strategy(self, tournament: Tournament) -> str:
+        """Resolve effective pairing strategy: explicit or format default."""
+        if tournament.pairing_strategy:
+            return tournament.pairing_strategy
+        if tournament.format == TournamentFormat.americano:
+            return PairingStrategy.random.value
+        return PairingStrategy.by_ranking.value
+
     async def generate_next_round(self, user_id: int, tournament_id: int) -> RoundDto | None:
         tournament = await self._tournaments.get_by_id(tournament_id)
         if not tournament:
@@ -102,12 +116,27 @@ class TournamentApplicationService:
             raise ValueError("Player count must be divisible by 4")
         existing_rounds = await self._rounds.list_by_tournament(tournament_id)
         next_index = len(existing_rounds)
-        player_ids = [p.id for p in players]
-        if tournament.format == TournamentFormat.americano:
-            pairs = generate_americano_pairs(player_ids)
+        ordered = sorted(players, key=lambda p: -p.total_points)
+        player_ids = [p.id for p in ordered]
+        strategy = self._resolve_pairing_strategy(tournament)
+
+        if strategy == PairingStrategy.random.value:
+            pairs = generate_random_pairs(player_ids)
+        elif strategy == PairingStrategy.by_ranking.value:
+            pairs = generate_by_ranking_pairs(player_ids)
+        elif strategy == PairingStrategy.similar_points_avoid_rematch.value:
+            past_quartets: list[tuple[int, int, int, int]] = []
+            for r in existing_rounds:
+                matches = await self._matches.list_by_round(r.id)
+                for m in matches:
+                    past_quartets.append((m.player1_id, m.player2_id, m.player3_id, m.player4_id))
+            pairs = generate_similar_points_avoid_rematch_pairs(player_ids, past_quartets)
         else:
-            ordered = sorted(players, key=lambda p: -p.total_points)
-            pairs = generate_mexicano_pairs([p.id for p in ordered])
+            # Fallback: by format
+            if tournament.format == TournamentFormat.americano:
+                pairs = generate_random_pairs(player_ids)
+            else:
+                pairs = generate_by_ranking_pairs(player_ids)
         round_entity = Round(id=0, tournament_id=tournament_id, round_index=next_index)
         round_entity = await self._rounds.add(round_entity)
         match_dtos = []

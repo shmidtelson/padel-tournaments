@@ -29,6 +29,7 @@ class CreateTournamentCommand:
     name: str
     format: TournamentFormat
     points_per_round: int | None = None
+    pairing_strategy: str | None = None  # random | by_ranking | similar_points_avoid_rematch
 
 
 @dataclass

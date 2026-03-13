@@ -65,6 +65,7 @@ def _tournament_to_entity(m: TournamentModel) -> Tournament:
         slug=m.slug,
         status=m.status,
         points_per_round=m.points_per_round,
+        pairing_strategy=getattr(m, "pairing_strategy", None),
         created_at=m.created_at,
         updated_at=m.updated_at,
     )
@@ -248,6 +249,7 @@ class TournamentRepository(ITournamentRepository):
             slug=tournament.slug,
             status=tournament.status,
             points_per_round=tournament.points_per_round,
+            pairing_strategy=tournament.pairing_strategy,
         )
         self._session.add(m)
         await self._session.flush()
@@ -260,6 +262,7 @@ class TournamentRepository(ITournamentRepository):
             m.name = tournament.name
             m.status = tournament.status
             m.points_per_round = tournament.points_per_round
+            m.pairing_strategy = tournament.pairing_strategy
             await self._session.flush()
 
 

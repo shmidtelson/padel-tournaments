@@ -83,6 +83,7 @@ class TournamentModel(Base):
     format: Mapped[TournamentFormat] = mapped_column(Enum(TournamentFormat), nullable=False)
     slug: Mapped[str] = mapped_column(String(120), index=True, nullable=False)
     points_per_round: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    pairing_strategy: Mapped[str | None] = mapped_column(String(32), nullable=True)  # random | by_ranking | similar_points_avoid_rematch
     status: Mapped[str] = mapped_column(String(32), default="draft")
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

@@ -33,6 +33,19 @@ app/
 - **Application**: application services depend only on domain ports; no SQL or HTTP.
 - **Infrastructure**: implements ports (repositories), exposes HTTP API (FastAPI).
 
+## Pairing strategies (round generation)
+
+When generating the next round (Americano/Mexicano), teams can be formed in three ways (optional `pairing_strategy` on tournament; default by format):
+
+| Strategy | Description |
+|----------|-------------|
+| **random** | Full random shuffle; consecutive groups of 4 become one match (team1 = first two, team2 = last two). |
+| **by_ranking** | Weak+strong vs weak+strong: players ordered by points; in each group of 4, team1 = 1st+3rd, team2 = 2nd+4th. |
+| **similar_points_avoid_rematch** | Group by similar points (consecutive quartets by ranking); for each quartet, choose the 2v2 split that minimizes how often those two pairs have already been in the same match. |
+
+- Create tournament: optional `pairing_strategy` in body (`"random"`, `"by_ranking"`, `"similar_points_avoid_rematch"`). If omitted: Americano → random, Mexicano → by_ranking.
+- Round generation uses the tournament’s effective strategy (explicit or default).
+
 ## SSE (real-time updates)
 
 - **`GET /tournaments/{tournament_id}/stream`** — Server-Sent Events: when a match score is updated (PATCH `/tournaments/matches/{match_id}`) or a round is added (POST `.../rounds/next`), all open connections to that tournament’s stream receive an event (`match_updated` or `rounds_updated`). The dashboard and TV screen can update without polling.

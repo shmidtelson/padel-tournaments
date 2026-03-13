@@ -31,6 +31,7 @@ def _tournament_to_response(t):
         slug=t.slug,
         status=t.status,
         points_per_round=t.points_per_round,
+        pairing_strategy=getattr(t, "pairing_strategy", None),
     )
 
 
@@ -64,6 +65,7 @@ async def create_tournament(
             name=body.name,
             format=body.format,
             points_per_round=body.points_per_round,
+            pairing_strategy=body.pairing_strategy,
         )
         t = await svc.create_tournament(user_id, cmd)
         return _tournament_to_response(t)
