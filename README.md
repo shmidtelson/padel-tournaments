@@ -136,7 +136,7 @@ Frontend: `NEXT_PUBLIC_API_URL`, `NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_SENTRY_DSN
 - Full Privacy/Terms and production Dockerfiles if deploying with Docker.
 - Additional tournament formats (Round Robin, Single/Double Elimination) once Americano/Mexicano are validated in production.
 
-Detailed audit: **docs/PRODUCTION_READINESS_AUDIT.md** (in Russian; summarizes MVP readiness and checklist).
+Detailed audit: **docs/PRODUCTION_READINESS_AUDIT.md** (MVP readiness and checklist).
 
 ---
 

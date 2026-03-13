@@ -1,83 +1,83 @@
-# Готовность к первому MVP — Padel Tournaments
+# First MVP Readiness — Padel Tournaments
 
-**Фокус:** что готово к запуску MVP, чего не хватает для первого релиза, что можно отложить.
-
----
-
-## Итог по MVP
-
-**Для первого MVP не хватает в основном фронта:** рабочие страницы входа/регистрации и базовая зона организатора (список организаций, создание турнира, управление участниками/раундами). Бэкенд и инфраструктура к MVP готовы при выполнении чеклиста (env, миграции, health).
+**Focus:** what is ready for MVP launch, what is missing for the first release, what can be deferred.
 
 ---
 
-## 1. Готово к MVP ✅
+## MVP summary
+
+**For the first MVP, the main gap is on the frontend:** working login/register pages and a basic organizer area (list of organizations, create tournament, manage participants/rounds). Backend and infrastructure are MVP-ready when the checklist is followed (env, migrations, health).
+
+---
+
+## 1. Ready for MVP ✅
 
 ### Backend
-- Регистрация/логин/refresh по API, JWT, роли (SuperAdmin, Owner, Admin, Player).
-- Организации: создание, модерация (суперпользователь), участники (Owner добавляет Admin).
-- Турниры: CRUD, игроки, раунды, матчи, Americano/Mexicano, лидерборд, SSE.
-- Биллинг: Stripe Checkout для Pro, webhook, проверка URL.
-- Админка: настройки сайта, статистика, CRUD блога. Публичные: список постов, пост по slug.
-- Contact: `POST /contact`, форма на сайте шлёт данные в API.
-- Безопасность: проверка SECRET_KEY/CORS при `DEBUG=false`, валидация пароля и URL.
-- Health: `/health`, `/health/ready` (БД). Логи и `X-Request-ID`.
-- Миграции: Alembic, начальная миграция. В деплое — `alembic upgrade head`.
-- Тесты: pytest (health, auth validation, contact, billing 401).
+- Register/login/refresh via API, JWT, roles (SuperAdmin, Owner, Admin, Player).
+- Organizations: create, moderation (superuser), members (Owner adds Admin).
+- Tournaments: CRUD, players, rounds, matches, Americano/Mexicano, leaderboard, SSE.
+- Billing: Stripe Checkout for Pro, webhook, URL validation.
+- Admin: site settings, stats, blog CRUD. Public: post list, post by slug.
+- Contact: `POST /contact`, website form submits to API.
+- Security: SECRET_KEY/CORS checks when `DEBUG=false`, password and URL validation.
+- Health: `/health`, `/health/ready` (DB). Logging and `X-Request-ID`.
+- Migrations: Alembic, initial migration. In deploy: `alembic upgrade head`.
+- Tests: pytest (health, auth validation, contact, billing 401).
 
 ### Frontend
-- Маркетинг: главная, как это работает, тарифы, отзывы, коллаборация, контакт (форма работает), блог, FAQ.
+- Marketing: home, how it works, pricing, reviews, collaboration, contact (form works), blog, FAQ.
 - SEO, sitemap, robots, i18n (ru/en).
-- Админка (статистика, настройки) и тарифы с кнопкой Stripe — работают при наличии токена в `localStorage`.
-- Privacy/Terms — заглушки («Содержимое будет добавлено»).
+- Admin (stats, settings) and pricing with Stripe button — work when token is in `localStorage`.
+- Privacy/Terms — placeholders (“Content to be added”).
 
-### Инфраструктура
-- Docker Compose (Postgres 5433, worker Procrastinate). Sentry (backend + frontend). Приватная OpenAPI по ключу.
-
----
-
-## 2. Чего не хватает для первого MVP ❌
-
-| # | Что | Зачем для MVP |
-|---|-----|----------------|
-| 1 | **Страницы Login и Register с формами** | Сейчас заглушки («в разработке»). Нужны формы: email + пароль, вызов `POST /auth/register` и `POST /auth/login`, сохранение токена (например в `localStorage`), редирект в личный кабинет или на список организаций. Без этого пользователь не может войти и стать организатором. |
-| 2 | **Личный кабинет организатора (минимум)** | После входа пользователь должен видеть свои организации и иметь возможность: создать организацию (вызов API), открыть организацию и создать турнир, добавить игроков, сгенерировать раунд, ввести счёт. Сейчас этого нет на фронте — только маркетинг и админка. Либо одна страница «Мои организации» + «Турниры организации» + форма создания турнира и базовая сетка/лидерборд. |
-| 3 | **Страница/режим для ТВ** | В плане был «режим для экрана в зале». Бэкенд даёт SSE и данные турнира. Нужна хотя бы одна страница (например `/[locale]/tournaments/[id]/display`) с крупным отображением текущего раунда и таблицы очков, подпиской на SSE. Без этого зал не может показывать сетку на экране. |
-| 4 | **Минимальный текст Privacy и Terms** | Сейчас «Содержимое будет добавлено». Для MVP достаточно по одному короткому абзацу (какие данные собираем, что делаем с ними; условия использования сервиса) или явная пометка «Draft / черновик» и дата. Нужно для доверия и при приёме платежей. |
-
-Итого по MVP: **обязательны пункты 1 и 2** (вход/регистрация + базовая зона организатора и турниров). Пункты 3 и 4 желательны для «полноценного» первого запуска; 3 можно заменить временной ссылкой на публичный турнир, 4 — кратким текстом или черновиком.
+### Infrastructure
+- Docker Compose (Postgres 5433, Procrastinate worker). Sentry (backend + frontend). Private OpenAPI by key.
 
 ---
 
-## 3. Можно отложить до после MVP ⏸
+## 2. Missing for first MVP ❌
 
-| Область | Что | Когда делать |
-|---------|-----|--------------|
-| Rate limiting | Ограничение запросов на `/auth/register`, `/auth/login` | После MVP при росте нагрузки или спаме. |
-| CI/CD | Автотесты, деплой по коммиту | Когда появится стабильный процесс релизов. |
-| Frontend-тесты | E2E (Playwright) или тесты компонентов | После фиксации основных сценариев. |
-| Полноценные Privacy/Terms | Юридически выверенные тексты | Перед масштабированием или по требованию. |
-| Production Dockerfile | Образ backend/frontend для деплоя | Если деплой будет через Docker. |
-| Сложные форматы | Round Robin, Single/Double Elimination (логика есть в плане) | После проверки Americano/Mexicano на реальных турнирах. |
+| # | Item | Why for MVP |
+|---|------|-------------|
+| 1 | **Login and Register pages with forms** | Currently placeholders (“coming soon”). Need forms: email + password, call `POST /auth/register` and `POST /auth/login`, store token (e.g. in `localStorage`), redirect to dashboard or organization list. Without this, users cannot sign in and become organizers. |
+| 2 | **Organizer dashboard (minimum)** | After login, user should see their organizations and be able to: create organization (API call), open org and create tournament, add players, generate round, enter score. This does not exist on the frontend yet — only marketing and admin. At least: “My organizations” page + “Organization tournaments” + tournament creation form and basic grid/leaderboard. |
+| 3 | **TV display page** | Planned “display mode for in-club screen”. Backend provides SSE and tournament data. Need at least one page (e.g. `/[locale]/tournaments/[id]/display`) with large display of current round and score table, subscribed to SSE. Without it, the venue cannot show the grid on screen. |
+| 4 | **Minimal Privacy and Terms text** | Currently “Content to be added”. For MVP, one short paragraph each is enough (what data we collect, what we do with it; terms of use), or an explicit “Draft” label and date. Needed for trust and when accepting payments. |
 
----
-
-## 4. Чеклист перед выкладкой MVP
-
-- [ ] **Backend env:** `DEBUG=false`, `SECRET_KEY` (≥32 символов), `CORS_ORIGINS`, `ALLOWED_FRONTEND_BASE_URL` (если включён Stripe), `DATABASE_URL`, при необходимости Stripe и Sentry.
-- [ ] **Миграции:** в деплое выполнен `uv run alembic upgrade head` до старта приложения.
-- [ ] **Health:** оркестратор/балансировщик использует `GET /health/ready` для готовности.
-- [ ] **Frontend env:** `NEXT_PUBLIC_API_URL` указывает на прод API.
-- [ ] **Суперпользователь:** в БД одному пользователю выдан `is_superuser = true` для модерации организаций и доступа к админке.
-- [ ] **Реализованы для MVP:** страницы Login/Register с вызовом API и сохранением токена; базовая зона организатора (организации + турниры + игроки + раунды/счёт); при желании — страница отображения для ТВ и краткие Privacy/Terms.
+**Summary:** Items **1 and 2** are required (login/register + basic organizer area and tournaments). Items 3 and 4 are recommended for a “full” first launch; 3 can be replaced by a temporary link to a public tournament, 4 by short text or a draft.
 
 ---
 
-## 5. Кратко по файлам и ролям
+## 3. Can be deferred until after MVP ⏸
 
-- **Backend README** — раздел Production checklist и пункт про бэкапы БД.
-- **Роли:** SuperAdmin (модерация, админка), Owner (добавляет Admin, подписка Pro), Admin (турниры, счёт), Player (участие в турнирах).
-- **Деплой:** поднять Postgres, выполнить миграции, задать env, запустить API и (отдельно) frontend; при необходимости — воркер Procrastinate.
+| Area | What | When |
+|------|------|------|
+| Rate limiting | Throttle `/auth/register`, `/auth/login` | After MVP when load or abuse grows. |
+| CI/CD | Automated tests, deploy on commit | When you have a stable release process. |
+| Frontend tests | E2E (Playwright) or component tests | After core flows are stable. |
+| Full Privacy/Terms | Legally reviewed texts | Before scaling or when required. |
+| Production Dockerfile | Backend/frontend image for deploy | If deploying with Docker. |
+| Advanced formats | Round Robin, Single/Double Elimination (planned) | After validating Americano/Mexicano in real tournaments. |
 
 ---
 
-*Аудит под первый MVP; обновлять по мере появления новых фич и требований.*
+## 4. Pre-launch MVP checklist
+
+- [ ] **Backend env:** `DEBUG=false`, `SECRET_KEY` (≥32 chars), `CORS_ORIGINS`, `ALLOWED_FRONTEND_BASE_URL` (if Stripe enabled), `DATABASE_URL`, and Stripe/Sentry if needed.
+- [ ] **Migrations:** run `uv run alembic upgrade head` in deploy before starting the app.
+- [ ] **Health:** orchestrator/load balancer uses `GET /health/ready` for readiness.
+- [ ] **Frontend env:** `NEXT_PUBLIC_API_URL` points to production API.
+- [ ] **Superuser:** one user in DB has `is_superuser = true` for organization moderation and admin access.
+- [ ] **MVP implemented:** Login/Register pages with API calls and token storage; basic organizer area (organizations + tournaments + players + rounds/scores); optionally TV display page and short Privacy/Terms.
+
+---
+
+## 5. Files and roles (summary)
+
+- **Backend README** — Production checklist and DB backup note.
+- **Roles:** SuperAdmin (moderation, admin), Owner (adds Admin, Pro subscription), Admin (tournaments, scoring), Player (participate in tournaments).
+- **Deploy:** bring up Postgres, run migrations, set env, start API and (separately) frontend; optionally Procrastinate worker.
+
+---
+
+*MVP readiness audit; update as features and requirements change.*

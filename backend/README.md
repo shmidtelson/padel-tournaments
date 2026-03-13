@@ -33,106 +33,106 @@ app/
 - **Application**: application services depend only on domain ports; no SQL or HTTP.
 - **Infrastructure**: implements ports (repositories), exposes HTTP API (FastAPI).
 
-## SSE (обновления в реальном времени)
+## SSE (real-time updates)
 
-- **`GET /tournaments/{tournament_id}/stream`** — Server-Sent Events: при обновлении счёта матча (PATCH `/tournaments/matches/{match_id}`) или добавлении раунда (POST `.../rounds/next`) все открытые подключения к потоку этого турнира получают событие (`match_updated` или `rounds_updated`). Так дашборд и экран ТВ могут обновляться без опроса.
-- События: `event: match_updated` с `data: {"type":"match_updated","match_id":...}`; `event: rounds_updated` с `data: {"type":"rounds_updated","round_index":...}`. Каждые ~30 сек отправляется `ping` для поддержания соединения.
+- **`GET /tournaments/{tournament_id}/stream`** — Server-Sent Events: when a match score is updated (PATCH `/tournaments/matches/{match_id}`) or a round is added (POST `.../rounds/next`), all open connections to that tournament’s stream receive an event (`match_updated` or `rounds_updated`). The dashboard and TV screen can update without polling.
+- Events: `event: match_updated` with `data: {"type":"match_updated","match_id":...}`; `event: rounds_updated` with `data: {"type":"rounds_updated","round_index":...}`. A `ping` is sent every ~30s to keep the connection alive.
 
 ## Sentry
 
-При заданном **SENTRY_DSN** в `.env` ошибки и трейсы (FastAPI) отправляются в Sentry. Опционально: **SENTRY_ENVIRONMENT** (по умолчанию `development`), **SENTRY_TRACES_SAMPLE_RATE** (по умолчанию `0.1`). Без DSN Sentry не инициализируется.
+When **SENTRY_DSN** is set in `.env`, errors and traces (FastAPI) are sent to Sentry. Optional: **SENTRY_ENVIRONMENT** (default `development`), **SENTRY_TRACES_SAMPLE_RATE** (default `0.1`). Without DSN, Sentry is not initialized.
 
-## OpenAPI / Swagger (приватная документация)
+## OpenAPI / Swagger (private docs)
 
 - **GET /docs** — Swagger UI.
 - **GET /redoc** — ReDoc.
-- **GET /openapi.json** — схема OpenAPI 3.0.
+- **GET /openapi.json** — OpenAPI 3.0 schema.
 
-Если в `.env` задан **DOCS_SECRET_KEY**, доступ к этим URL только с ключом:
-- в query: `/docs?docs_key=YOUR_SECRET`;
-- или в заголовке: `X-Docs-Key: YOUR_SECRET`.
-Без ключа возвращается 403. Если `DOCS_SECRET_KEY` не задан, документация открыта без проверки (удобно для локальной разработки).
+If **DOCS_SECRET_KEY** is set in `.env`, these URLs are only accessible with the key:
+- query: `/docs?docs_key=YOUR_SECRET`;
+- or header: `X-Docs-Key: YOUR_SECRET`.
+Without the key, 403 is returned. If `DOCS_SECRET_KEY` is not set, docs are open (handy for local development).
 
 ## Production checklist
 
-Перед выкладкой в прод убедитесь:
+Before going to production:
 
-- **SECRET_KEY** — задан и не менее 32 символов (при `DEBUG=false` приложение не стартует с дефолтом).
-- **CORS_ORIGINS** — задан список разрешённых origin через запятую (например `https://your-frontend.com`).
-- **ALLOWED_FRONTEND_BASE_URL** — задан для проверки `success_url`/`cancel_url` Stripe Checkout (защита от open redirect).
-- **Миграции** — в деплое перед стартом приложения выполнить `uv run alembic upgrade head`.
-- **Health** — использовать `GET /health/ready` для проверки готовности (проверка БД); `GET /health` — только liveness.
-- **Логи и мониторинг** — запросы логируются с `X-Request-ID`; настроить Sentry (SENTRY_DSN) и при необходимости ротацию логов.
-- **Бэкапы БД** — настроить резервное копирование Postgres (pg_dump по расписанию или бэкапы managed DB).
+- **SECRET_KEY** — set and at least 32 characters (with `DEBUG=false` the app will not start with the default).
+- **CORS_ORIGINS** — set allowed frontend origin(s), comma-separated (e.g. `https://your-frontend.com`).
+- **ALLOWED_FRONTEND_BASE_URL** — set for Stripe Checkout `success_url`/`cancel_url` validation (open redirect protection).
+- **Migrations** — in deploy, run `uv run alembic upgrade head` before starting the app.
+- **Health** — use `GET /health/ready` for readiness (DB check); `GET /health` for liveness only.
+- **Logging and monitoring** — requests are logged with `X-Request-ID`; configure Sentry (SENTRY_DSN) and log rotation if needed.
+- **DB backups** — set up Postgres backups (scheduled pg_dump or managed DB backups).
 
 ## Run
 
-**Локальная разработка:** в `.env` задайте **DEBUG=true** (тогда не проверяются SECRET_KEY и CORS_ORIGINS). Для продакшена оставьте DEBUG=false и задайте все переменные из Production checklist.
+**Local development:** set **DEBUG=true** in `.env` (then SECRET_KEY and CORS_ORIGINS are not enforced). For production leave DEBUG=false and set all variables from the Production checklist.
 
-**Локальная разработка с Docker (Postgres + очереди Procrastinate):**
+**Local development with Docker (Postgres + Procrastinate queues):**
 
-Postgres в контейнере слушает на хосте порт **5433** (чтобы не конфликтовать с локальным Postgres на 5432). В `.env` укажите `DATABASE_URL=...@localhost:5433/...`.
+Postgres in the container listens on host port **5433** (to avoid conflict with local Postgres on 5432). In `.env` use `DATABASE_URL=...@localhost:5433/...`.
 
 ```bash
-# В корне проекта
+# From project root
 docker compose up -d postgres
-# Опционально воркер очередей:
+# Optional queue worker:
 docker compose up -d worker
 
 cd backend
-cp ../.env.example .env   # в примере уже порт 5433 для docker compose
+cp ../.env.example .env   # example already uses port 5433 for docker compose
 uv run pip install -e .
 uv run alembic upgrade head
 uv run uvicorn app.main:app --reload
 ```
 
-Воркер Procrastinate можно запускать и локально (нужен sync URL в `.env`):
+The Procrastinate worker can also run locally (sync URL required in `.env`):
 
 ```bash
 cd backend
 procrastinate --app=app.queues:app worker
 ```
 
-**Без Docker** — подставьте свои параметры БД в `DATABASE_URL`.
+**Without Docker** — put your DB parameters in `DATABASE_URL`.
 
-## Роли пользователей
+## User roles
 
-| Роль | Описание | Где хранится |
-|------|----------|--------------|
-| **SuperAdmin** | Глобальный администратор: подтверждает/отклоняет организации. | `User.is_superuser = True` |
-| **Owner (организации)** | Владелец организации. Один пользователь может быть Owner нескольких организаций. Может добавлять в организацию **Admin** и других **Owner**. | `OrganizationMember.role = "owner"` |
-| **Admin (организации)** | Администратор организации; добавляется только **Owner**. Может управлять турнирами и вводить счёт наравне с Owner. | `OrganizationMember.role = "admin"` |
-| **Player** | Игрок. Любой залогиненный пользователь может регистрироваться в турнирах; отдельной сущности «роль Player» нет. | — |
+| Role | Description | Stored in |
+|------|-------------|-----------|
+| **SuperAdmin** | Global admin: approves/rejects organizations. | `User.is_superuser = True` |
+| **Owner (organization)** | Organization owner. One user can be Owner of multiple organizations. Can add **Admin** and other **Owner** to the organization. | `OrganizationMember.role = "owner"` |
+| **Admin (organization)** | Organization admin; added only by **Owner**. Can manage tournaments and enter scores like Owner. | `OrganizationMember.role = "admin"` |
+| **Player** | Player. Any logged-in user can register for tournaments; there is no separate “Player” entity. | — |
 
-- **Добавление участников организации**: только **Owner** может вызывать `POST /organizations/{org_id}/members` (тело: `{"user_id": <id>, "role": "admin"}` или `"owner"`). Список участников: `GET /organizations/{org_id}/members` (доступен любому члену организации).
+- **Adding organization members:** only **Owner** can call `POST /organizations/{org_id}/members` (body: `{"user_id": <id>, "role": "admin"}` or `"owner"`). List members: `GET /organizations/{org_id}/members` (available to any org member).
 
-## Подтверждение организаций (суперпользователь)
+## Organization approval (superuser)
 
-- При создании организация получает статус **pending**; создавать турниры может только организация со статусом **approved**.
-- Подтвердить или отклонить организацию может только **суперпользователь** (`User.is_superuser = True`):
-  - `GET /organizations/pending` — список организаций на подтверждении (только суперпользователь);
-  - `PATCH /organizations/{id}/approval` — тело `{"approved": true}` или `{"approved": false}` (только суперпользователь).
-- Назначить суперпользователя: обновить в БД у нужного пользователя поле `is_superuser = true` (или добавить отдельный endpoint/скрипт при первом запуске).
+- On creation, an organization gets status **pending**; only **approved** organizations can create tournaments.
+- Only a **superuser** (`User.is_superuser = True`) can approve or reject:
+  - `GET /organizations/pending` — list of organizations pending approval (superuser only);
+  - `PATCH /organizations/{id}/approval` — body `{"approved": true}` or `{"approved": false}` (superuser only).
+- To assign a superuser: set `is_superuser = true` in the DB for the desired user (or add a dedicated endpoint/script on first run).
 
-## Панель суперадмина (SuperAdmin)
+## SuperAdmin panel
 
-- **GET /admin/stats** — статистика: пользователи (всего / суперпользователи), организации (всего / на модерации / одобрено / отклонено), турниры, игроки, раунды, матчи. Только SuperAdmin (Bearer token).
-- **GET /admin/settings** — настройки сайта (key-value). Рекомендуемые ключи: `maintenance_mode`, `registration_enabled`, `default_locale`, `max_tournaments_per_month_free`, `max_organizations_per_user`, `site_name`, `contact_email`.
-- **PATCH /admin/settings** — обновить настройки (тело: `{"settings": {"key": "value", ...}}`). Только SuperAdmin.
-- **GET/POST/PATCH/DELETE /admin/blog** — CRUD постов блога (только SuperAdmin). Публичный список: **GET /blog**, пост по slug: **GET /blog/{slug}**.
+- **GET /admin/stats** — stats: users (total / superusers), organizations (total / pending / approved / rejected), tournaments, players, rounds, matches. SuperAdmin only (Bearer token).
+- **GET /admin/settings** — site settings (key-value). Suggested keys: `maintenance_mode`, `registration_enabled`, `default_locale`, `max_tournaments_per_month_free`, `max_organizations_per_user`, `site_name`, `contact_email`.
+- **PATCH /admin/settings** — update settings (body: `{"settings": {"key": "value", ...}}`). SuperAdmin only.
+- **GET/POST/PATCH/DELETE /admin/blog** — blog post CRUD (SuperAdmin only). Public list: **GET /blog**, post by slug: **GET /blog/{slug}**.
 
-## Stripe (оплата тарифа Pro для организаций)
+## Stripe (Pro plan for organizations)
 
-- В `.env` задайте: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_PRO` (Price ID рекуррентного тарифа в Stripe).
-- **POST /billing/create-checkout-session** — тело: `{"organization_id": int, "success_url": str, "cancel_url": str}`. Только Owner организации. Возвращает `{ "url": "https://checkout.stripe.com/..." }` — редирект на оплату.
-- **POST /billing/webhook** — webhook Stripe (подпись проверяется по `STRIPE_WEBHOOK_SECRET`). События: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`. В метаданных подписки передаётся `organization_id`; у организации обновляются `plan` (free/pro) и `stripe_subscription_id`.
+- In `.env` set: `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `STRIPE_PRICE_ID_PRO` (Stripe recurring price ID).
+- **POST /billing/create-checkout-session** — body: `{"organization_id": int, "success_url": str, "cancel_url": str}`. Organization Owner only. Returns `{ "url": "https://checkout.stripe.com/..." }` for redirect to checkout.
+- **POST /billing/webhook** — Stripe webhook (signature verified with `STRIPE_WEBHOOK_SECRET`). Events: `checkout.session.completed`, `customer.subscription.updated`, `customer.subscription.deleted`. Subscription metadata must include `organization_id`; organization’s `plan` (free/pro) and `stripe_subscription_id` are updated.
 
 ## Migrations
 
-Alembic uses `app.infrastructure.persistence.models` and `app.core.database.Base` for schema.
+Alembic uses `app.infrastructure.persistence.models` and `app.core.database.Base` for the schema.
 
 ```bash
 uv run alembic upgrade head
 ```
 
-Новые таблицы/колонки: `site_settings`, `blog_posts`, у `organizations` — `created_at`, `updated_at`, `stripe_customer_id`, `stripe_subscription_id`, `plan`. При необходимости создайте миграцию вручную или через `alembic revision --autogenerate`.
+New tables/columns: `site_settings`, `blog_posts`; on `organizations`: `created_at`, `updated_at`, `stripe_customer_id`, `stripe_subscription_id`, `plan`. Create migrations manually or with `alembic revision --autogenerate` as needed.
