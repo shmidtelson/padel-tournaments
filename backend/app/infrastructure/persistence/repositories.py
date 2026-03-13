@@ -1,6 +1,6 @@
 """Repository implementations (infrastructure). Map ORM <-> domain entities."""
 
-from typing import Sequence
+from collections.abc import Sequence
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
