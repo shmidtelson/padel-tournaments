@@ -65,7 +65,7 @@ async def create_checkout_session(
     customer_id = org.stripe_customer_id
     if not customer_id:
         cust = stripe.Customer.create(
-            email=None,
+            email="",  # optional for API; set later via dashboard or update
             metadata={"organization_id": str(org_id)},
         )
         customer_id = cust.id
@@ -87,8 +87,8 @@ async def create_checkout_session(
 @router.post("/webhook")
 async def stripe_webhook(
     request: Request,
+    session: Annotated[AsyncSession, Depends(get_db)],
     stripe_signature: Annotated[str | None, Header(alias="Stripe-Signature")] = None,
-    session: Annotated[AsyncSession, Depends(get_db)] = None,
 ):
     """Webhook Stripe: обновление подписки (subscription created/updated/deleted)."""
     if not settings.stripe_webhook_secret:

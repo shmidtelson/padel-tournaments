@@ -77,7 +77,7 @@ class OrganizationApplicationService:
             raise PermissionError("Superuser check not available")
         user = await self._users.get_by_id(superuser_id)
         self._ensure_superuser(user)
-        return await self._orgs.list_by_status(OrganizationStatus.pending.value)
+        return list(await self._orgs.list_by_status(OrganizationStatus.pending.value))
 
     async def add_member(
         self, inviter_user_id: int, org_id: int, new_user_id: int, role: OrgMemberRole
@@ -100,4 +100,4 @@ class OrganizationApplicationService:
         """Список участников организации. Доступен любому члену организации (owner/admin)."""
         if not await self._members.is_user_org_admin(user_id, org_id):
             raise PermissionError("Not a member of this organization")
-        return await self._members.get_org_members(org_id)
+        return list(await self._members.get_org_members(org_id))

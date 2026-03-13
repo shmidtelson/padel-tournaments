@@ -1,5 +1,7 @@
 """Repository implementations (infrastructure). Map ORM <-> domain entities."""
 
+from typing import Sequence
+
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -323,7 +325,7 @@ class PlayerRepository(IPlayerRepository):
             m.last_name = player.last_name
             await self._session.flush()
 
-    async def save_many(self, players: list[Player]) -> None:
+    async def save_many(self, players: Sequence[Player]) -> None:
         for p in players:
             await self.save(p)
 
@@ -383,7 +385,7 @@ class MatchRepository(IMatchRepository):
         await self._session.refresh(m)
         return _match_to_entity(m)
 
-    async def add_many(self, matches: list[Match]) -> None:
+    async def add_many(self, matches: Sequence[Match]) -> None:
         for match in matches:
             await self.add(match)
 

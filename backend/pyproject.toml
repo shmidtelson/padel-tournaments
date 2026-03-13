@@ -1,3 +1,7 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
 [project]
 name = "padel-tournaments-backend"
 version = "0.1.0"
@@ -21,6 +25,9 @@ dependencies = [
     "sentry-sdk[fastapi]>=1.39.0",
 ]
 
+[tool.setuptools.packages.find]
+include = ["app*"]
+
 [project.optional-dependencies]
 dev = [
     "pytest>=7.4.0",
@@ -30,6 +37,8 @@ dev = [
     "black>=24.0.0",
     "isort>=5.13.0",
     "ruff>=0.4.0",
+    "flake8>=7.0.0",
+    "mypy>=1.8.0",
 ]
 
 [tool.pytest.ini_options]
@@ -70,3 +79,13 @@ ignore = ["E501"]  # line length handled by black
 
 [tool.ruff.lint.isort]
 known-first-party = ["app"]
+
+# flake8: use backend/.flake8 (max-line-length=100, exclude, etc.)
+
+[tool.mypy]
+python_version = "3.11"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+exclude = ["alembic/versions/", "alembic/env.py"]

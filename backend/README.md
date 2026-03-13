@@ -84,9 +84,10 @@ Install dev deps: `uv sync --extra dev` or `pip install -e ".[dev]"`.
 
 - **Format:** `black app tests` and `isort app tests`
 - **Check only:** `black --check app tests`, `isort --check-only app tests`
-- **Lint:** `ruff check app tests` (add `--fix` to auto-fix)
+- **Lint:** `ruff check app tests` (add `--fix` to auto-fix), `flake8 app tests`
+- **Types:** `mypy app`
 
-CI runs black --check, isort --check-only, and ruff check before tests.
+Config: `.flake8` (max-line-length 100, E501 ignored to match black), `[tool.mypy]` in `pyproject.toml`. CI runs all of the above before tests.
 
 ## Run
 

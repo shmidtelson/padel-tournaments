@@ -74,7 +74,7 @@ class TournamentApplicationService:
 
     async def list_tournaments_for_user(self, user_id: int) -> list[Tournament]:
         organization_ids = await self._org_members.get_organization_ids_for_user(user_id)
-        result = []
+        result: list[Tournament] = []
         for oid in organization_ids:
             tournaments = await self._tournaments.list_by_organization(oid)
             result.extend(tournaments)
